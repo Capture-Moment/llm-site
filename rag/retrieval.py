@@ -12,8 +12,8 @@ from pydantic import BaseModel, Field
 from rag.config import get_settings
 from rag.providers.gemini import get_client
 
-CV_DIR = Path("dataset")
-INDEX_PATH = Path("rag/index.json")
+CV_DIR = Path(__file__).resolve().parent.parent / "dataset"
+INDEX_PATH = Path(__file__).resolve().parent / "index.json"
 
 
 class Chunk(BaseModel):
