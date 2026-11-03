@@ -55,11 +55,14 @@ def chunk_markdown(path: Path) -> list[Chunk]:
             chunks.append(Chunk(source=source, text=part.strip()))
     return chunks
 
-EMBED_BATCH_SIZE = 100
+EMBED_BATCH_SIZE = 50
+EMBED_PAUSE_SECONDS = 15
 
 async def embed_texts(texts: list[str]) -> list[list[float]]:
     embeddings: list[list[float]] = []
     for i in range(0, len(texts), EMBED_BATCH_SIZE):
+        if i > 0:
+            await asyncio.sleep(EMBED_PAUSE_SECONDS)
         batch = texts[i:i + EMBED_BATCH_SIZE]
         response = await get_client().embeddings.create(
             input=batch,
