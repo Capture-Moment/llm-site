@@ -63,17 +63,24 @@ in the relevant content — no manual curation, no duplicated files.
 
 ## 💻 Local development
 
+### Install
 ```bash
 pip install -r requirements.txt
-
-# run the tests
-pytest
-
-# rebuild the index locally (dev only — CI produces the official one)
-python -m rag.build_index --general dataset/information.md --docs-path <path> --output index.json
-
-# query the retrieval module
+```
+#### Run the tests
+```bash
+pytest tests
+```
+#### Local test
+```bash
 python -m rag.retrieval
+# Start the local server
+uvicorn api.index:app --reload 
+```
+#### Only for CI
+```bash
+# rebuild the index locally (dev only — CI produces the official one)
+python -m rag.retrieval --docs-path /tmp/docs --output index.json
 ```
 
 ## 🔐 Security model
