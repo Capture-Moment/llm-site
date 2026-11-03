@@ -9,6 +9,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+import openai
+
 from rag.config import get_settings
 from rag.providers.gemini import get_client
 
@@ -56,18 +58,24 @@ def chunk_markdown(path: Path) -> list[Chunk]:
     return chunks
 
 EMBED_BATCH_SIZE = 50
-EMBED_PAUSE_SECONDS = 15
 
 async def embed_texts(texts: list[str]) -> list[list[float]]:
     embeddings: list[list[float]] = []
     for i in range(0, len(texts), EMBED_BATCH_SIZE):
-        if i > 0:
-            await asyncio.sleep(EMBED_PAUSE_SECONDS)
         batch = texts[i:i + EMBED_BATCH_SIZE]
-        response = await get_client().embeddings.create(
-            input=batch,
-            model=get_settings().embedding_model,
-        )
+        for attempt in range(6):  # jusqu'à 6 essais par batch
+            try:
+                response = await get_client().embeddings.create(
+                    input=batch,
+                    model=get_settings().embedding_model,
+                )
+                break
+            except openai.RateLimitError:
+                wait = 15 * (attempt + 1)  # 15s, 30s, 45s...
+                print(f"  ⏳ 429 rate limit — retry in {wait}s (attempt {attempt + 1}/6)")
+                await asyncio.sleep(wait)
+        else:
+            raise RuntimeError("Embedding failed after 6 retries")
         embeddings.extend(d.embedding for d in response.data)
     return embeddings
 
