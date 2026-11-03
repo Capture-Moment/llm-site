@@ -55,15 +55,18 @@ def chunk_markdown(path: Path) -> list[Chunk]:
             chunks.append(Chunk(source=source, text=part.strip()))
     return chunks
 
+EMBED_BATCH_SIZE = 100
 
 async def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Request embedding vectors for N texts (single API call)."""
-    response = await get_client().embeddings.create(
-        model=get_settings().embedding_model,
-        input=texts,
-    )
-    return [item.embedding for item in response.data]
-
+    embeddings: list[list[float]] = []
+    for i in range(0, len(texts), EMBED_BATCH_SIZE):
+        batch = texts[i:i + EMBED_BATCH_SIZE]
+        response = await get_client().embeddings.create(
+            input=batch,
+            model=get_settings().embedding_model,
+        )
+        embeddings.extend(d.embedding for d in response.data)
+    return embeddings
 
 def cosine_similarity(a: list[float], b: list[float]) -> float:
     """Angle between two vectors: 1.0 = same direction, 0.0 = unrelated."""
