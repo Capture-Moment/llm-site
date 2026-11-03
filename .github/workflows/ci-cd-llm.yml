@@ -78,7 +78,9 @@ jobs:
 
       # Adapt the module name to your project (the ingestion entry point)
       - name: Build embeddings index
-        run: python -m rag.retrieval --docs-path /tmp/docs --output index.json
+        run: python -m rag.retrieval --docs-path /tmp/docs --output rag/index.json
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Commit index.json (if changed)
         run: |
