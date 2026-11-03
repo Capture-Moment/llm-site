@@ -5,6 +5,7 @@ import os
 # MUST run before any application import (api/, rag/…):
 # in CI there is no .env, so give Settings a dummy key to validate against.
 os.environ.setdefault("GEMINI_API_KEY", "ci-test-key")
+os.environ.setdefault("GROQ_API_KEY", "ci-test-key")
 
 import pytest  # noqa: E402  (import after env setup)
 
