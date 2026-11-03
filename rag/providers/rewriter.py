@@ -11,6 +11,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
 from rag.config import get_settings
+from rag.schemas import MAX_MESSAGE_LENGTH
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -25,12 +26,15 @@ Reply ONLY with JSON: {"query": "..."}"""
 class RewrittenQuery(BaseModel):
     """Contract the rewriter LLM must fill — validated BEFORE use."""
 
-    query: str = Field(min_length=1, max_length=1000)
+    query: str = Field(min_length=1, max_length=MAX_MESSAGE_LENGTH)
 
 
 async def rewrite_query(question: str) -> str:
     """Return the corrected question, or the original on any failure."""
     settings = get_settings()
+    if settings.groq_api_key is None:
+        return question
+
     try:
         client = AsyncOpenAI(
             base_url="https://api.groq.com/openai/v1",

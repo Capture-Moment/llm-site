@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from rag.schemas import ChatMessage, ChatRequest, Source
+from rag.schemas import ChatMessage, ChatRequest, Source, MAX_MESSAGE_LENGTH
 
 
 def test_valid_request():
@@ -23,7 +23,7 @@ def test_empty_message_rejected():
 
 def test_message_too_long_rejected():
     with pytest.raises(ValidationError):
-        ChatRequest(message="x" * 1001)
+        ChatRequest(message="x" * (MAX_MESSAGE_LENGTH + 1))
 
 
 def test_system_role_blocked_at_the_door():
