@@ -4,15 +4,17 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+MAX_MESSAGE_LENGTH = 4000
+
 # --- HTTP request contract (consumers: rag/llm.py, api/index.py) ---
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
-    content: str = Field(min_length=1, max_length=4000)
+    content: str = Field(min_length=1, max_length=MAX_MESSAGE_LENGTH)
 
 
 class ChatRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=4000)
+    message: str = Field(min_length=1, max_length=MAX_MESSAGE_LENGTH)
     history: list[ChatMessage] = Field(default_factory=list, max_length=20)
 
 

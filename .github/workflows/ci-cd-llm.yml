@@ -1,0 +1,93 @@
+# ==================================================================
+# CaptureMoment llm-site — CI/CD
+# PR/push develop : install + pytest (validation)
+# push main / dispatch : install + tests + rebuild index.json + deploy
+# ==================================================================
+
+name: Test & Build Index
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+  # Triggered by the docs repo CI after a merge to main
+  repository_dispatch:
+    types: [docs-updated]
+
+jobs:
+  # --------------------------------------------------------------
+  # 1. Validation: dependencies + unit tests
+  # --------------------------------------------------------------
+  test:
+    name: Tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run tests
+        run: pytest -v --tb=short
+
+  # --------------------------------------------------------------
+  # 2. Index build: only on main / manual / docs trigger
+  #    -> clones docs repo, embeds, commits index.json
+  #    -> the commit triggers the Vercel deployment
+  # --------------------------------------------------------------
+  build-index:
+    name: Rebuild index.json
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+      || github.event_name == 'workflow_dispatch'
+      || github.event_name == 'repository_dispatch'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout llm-site
+        uses: actions/checkout@v7
+        with:
+          # needed to commit index.json
+          token: ${{ secrets.CI_GH_TOKEN }}
+          persist-credentials: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Fresh copy of the documentation sources (shallow, no token needed)
+      - name: Clone docs repository
+        run: |
+          git clone --depth 1 https://github.com/Capture-Moment/docs.git /tmp/docs
+
+      # Adapt the module name to your project (the ingestion entry point)
+      - name: Build embeddings index
+        run: python -m rag.build_index --docs-path /tmp/docs --output index.json
+
+      - name: Commit index.json (if changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.json
+          if git diff --cached --quiet; then
+            echo "No index changes — nothing to commit."
+          else
+            git commit -m "chore: rebuild index.json [skip ci]"
+            git push
+          fi
