@@ -77,10 +77,21 @@ python -m rag.retrieval
 # Start the local server
 uvicorn api.index:app --reload 
 ```
+
+#### Download all dataset
+```bash
+git clone --depth 1 https://github.com/Capture-Moment/docs.git /tmp/docs
+
+# Generate again the index.json with rag.retrieval
+```
+
 #### Only for CI
 ```bash
 # rebuild the index locally (dev only — CI produces the official one)
 python -m rag.retrieval --docs-path /tmp/docs --output index.json
+
+# Test with your own key
+$env:GEMINI_API_KEY = "your key" ; python -m rag.retrieval --docs-path /tmp/docs --output rag/index.json
 ```
 
 ## 🔐 Security model
