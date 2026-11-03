@@ -116,3 +116,4 @@ data/
 
 # Index file embaddings
 index.json
+rag/index.json
