@@ -78,7 +78,7 @@ jobs:
 
       # Adapt the module name to your project (the ingestion entry point)
       - name: Build embeddings index
-        run: python -m rag.build_index --docs-path /tmp/docs --output index.json
+        run: python -m rag.retrieval --docs-path /tmp/docs --output index.json
 
       - name: Commit index.json (if changed)
         run: |

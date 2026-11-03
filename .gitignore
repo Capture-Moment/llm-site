@@ -113,3 +113,7 @@ data/
 
 # Vercel
 .vercel
+
+# Index file embaddings
+index.json
+rag/index.json

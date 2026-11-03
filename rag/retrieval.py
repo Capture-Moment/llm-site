@@ -20,6 +20,7 @@ class Chunk(BaseModel):
     """A piece of text from the CV, with its embedding vector (internal model — never sent to the frontend)."""
 
     source: str  # e.g. "experiences · Experience"
+    kind: str = "general"
     text: str
     embedding: list[float] = Field(default_factory=list)
 
@@ -75,7 +76,7 @@ def test_index_json_is_valid():
     """Merge-conflict detector: a conflicted index.json contains git markers."""
     import json
     from rag.retrieval import INDEX_PATH
-    data = json.loads(INDEX_PATH.read_text(encoding="utf-8"))  # would raise on <<<<<<<
+    data = json.loads(INDEX_PATH.read_text(encoding="utf-8"))
     assert len(data) > 0
 
 @lru_cache
@@ -112,27 +113,49 @@ async def build_context(query: str) -> str:
 
 
 if __name__ == "__main__":
-    """Ingestion: CV -> chunks -> embeddings -> index.json. Re-run after every CV change."""
+    """Ingestion: dataset/ + docs/ -> chunks -> embeddings -> index.json."""
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--docs-path", type=Path, default=None,
+                        help="Optional path to a docs checkout (adds kind='docs' chunks)")
+    parser.add_argument("--output", type=Path, default=INDEX_PATH)
+    args = parser.parse_args()
 
     async def ingest() -> None:
         if not CV_DIR.exists():
             raise SystemExit(f"Directory '{CV_DIR}/' not found — create it with your .md files")
 
         chunks: list[Chunk] = []
+
+        # General knowledge (dataset/), kind='general'
         for md_path in sorted(CV_DIR.glob("*.md")):
             file_chunks = chunk_markdown(md_path)
-            print(f"  {md_path.name}: {len(file_chunks)} chunks")
+            for c in file_chunks:
+                c.kind = "general"
+            print(f"  {md_path.name}: {len(file_chunks)} chunks [general]")
             chunks.extend(file_chunks)
-        print(f"{len(chunks)} chunks found, embedding...")
 
+        # Technical docs (cloned repo), kind='docs'
+        if args.docs_path is not None:
+            for md_path in sorted(args.docs_path.rglob("*.md")):
+                if "site" in md_path.parts or "node_modules" in md_path.parts:
+                    continue  # skip build output
+                file_chunks = chunk_markdown(md_path)
+                for c in file_chunks:
+                    c.kind = "docs"
+                print(f"  {md_path.relative_to(args.docs_path)}: {len(file_chunks)} chunks [docs]")
+                chunks.extend(file_chunks)
+
+        print(f"{len(chunks)} chunks found, embedding...")
         embeddings = await embed_texts([c.text for c in chunks])
         for chunk, emb in zip(chunks, embeddings):
             chunk.embedding = emb
 
-        INDEX_PATH.write_text(
+        args.output.write_text(
             json.dumps([c.model_dump() for c in chunks]),
             encoding="utf-8",
         )
-        print(f"✅ Index saved: {INDEX_PATH} ({INDEX_PATH.stat().st_size // 1024} KB)")
+        print(f"✅ Index saved: {args.output} ({args.output.stat().st_size // 1024} KB)")
 
     asyncio.run(ingest())
