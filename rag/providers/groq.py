@@ -27,6 +27,7 @@ async def stream_answer(
     question: str,
     history: list[ChatMessage] | None = None,
     context: str = "",
+    source: str = "site",
 ) -> AsyncGenerator[str, None]:
     """Stream Groq's answer, token by token.
 
