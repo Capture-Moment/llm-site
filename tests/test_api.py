@@ -17,9 +17,9 @@ def test_empty_message_is_422():
 
 def test_chat_streams_sse(monkeypatch):
     async def fake_rewrite(q): return q
-    async def fake_search(q, k=None):
+    async def fake_search(q, k=None, kind=None):
         return [(0.9, Chunk(source="test · topic", text="body", embedding=[]))]
-    async def fake_stream(q, history=None, context=""):
+    async def fake_stream(q, history=None, context="", source="site"):
         yield "Hello"
         yield " world"
 
