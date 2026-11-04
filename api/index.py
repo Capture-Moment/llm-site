@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from rag.config import get_settings
 from rag.llm import stream_answer
 from rag.providers.rewriter import rewrite_query
+from rag.providers.prompt import build_messages
 from rag.retrieval import format_context, search
 from rag.schemas import (
     ChatRequest,
@@ -61,10 +62,11 @@ async def chat(request: ChatRequest, debug: bool = False) -> StreamingResponse:
     #    The visitor still sees THEIR message in the UI; only the pipeline
     #    works with the corrected version.
     question = await rewrite_query(request.message)
+    kind = "docs" if request.source == "docs" else "site"
 
     # 1. Retrieval: find the CV chunks most relevant to the corrected question.
     try:
-        scored = await search(question)
+        scored = await search(question, kind=kind)
     except Exception as exc:
         # Error BEFORE streaming: headers not sent yet, a proper HTTP
         # error status is still possible.
