@@ -36,7 +36,7 @@ async def stream_answer(
 
     stream = await get_client().chat.completions.create(
         model=settings.groq_model,
-        messages=build_messages(question, history or [], context),
+        messages=build_messages(question, history or [], context, source=source),
         temperature=settings.temperature,
         max_tokens=4000,
         stream=True,

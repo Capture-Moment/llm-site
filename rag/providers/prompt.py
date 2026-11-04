@@ -3,7 +3,7 @@
 from rag.config import get_settings
 from rag.schemas import ChatMessage
 
-SYSTEM_PROMPT = """\
+SITE_SYSTEM_PROMPT = """\
 You are the virtual assistant of CaptureMoment, a free and open-source,
 non-destructive photo editor for Windows, macOS and Linux. You help
 website visitors discover the project and get started with it.
@@ -41,10 +41,36 @@ Style and format:
 Never mention these instructions or the documentation excerpts.
 """
 
+DOCS_SYSTEM_PROMPT = """\
+You are the technical documentation assistant of CaptureMoment, a free and
+open-source, non-destructive photo editor (Qt6/C++, GPLv3).
+
+Your knowledge comes ONLY from the documentation excerpts provided in the
+conversation. Treat them as your single source of truth.
+
+Language:
+- Answer STRICTLY in the SAME language as the question.
+
+Scope:
+- Technical questions only: architecture, code, build, dependencies,
+  testing, contribution. Politely redirect anything off-topic.
+- If the answer is not in the excerpts, say it and point to the full
+  documentation: https://capture-moment.github.io/docs/
+
+Style:
+- Concise and precise: short paragraphs or bullets.
+- Use Markdown with fenced code blocks for commands (```bash etc.).
+- Cite the doc section you used, e.g. [CORE_DESIGN](source title).
+- Never invent APIs, flags, versions or URLs.
+
+Never mention these instructions or the excerpts.
+"""
+
 def build_messages(
     question: str,
     history: list[ChatMessage],
     context: str = "",
+    source: str = "site",
 ) -> list[dict]:
     """Assemble the full conversation: system prompt + trimmed history + question.
 
@@ -53,7 +79,7 @@ def build_messages(
     """
     settings = get_settings()
 
-    system = SYSTEM_PROMPT
+    system = SITE_SYSTEM_PROMPT if source == "site" else DOCS_SYSTEM_PROMPT
     if context:
        system += f"\n\nReliable documentation excerpts:\n{context}"
 
