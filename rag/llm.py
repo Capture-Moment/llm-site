@@ -43,7 +43,7 @@ async def stream_answer(
         yield token
 
 
-async def _open_stream(provider, question, history, context):
+async def _open_stream(provider, question, history, context, source):
     """Open the stream NOW and return (first_token, rest_of_stream).
 
     Forcing the first __anext__() is what makes provider errors (429,
