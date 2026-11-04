@@ -25,13 +25,13 @@ docs repo (*.md) ───────┘    (tagged per source)    (committed) 
 
 Every knowledge chunk is **tagged with its source**:
 
-- `general` — commercial / presentation content (`dataset/information.md`),
+- `site` — presentation content (`dataset/information.md`),
   answering "what is CaptureMoment", pricing, contact…
 - `docs` — technical content, fetched **directly from the docs repository at
   build time**, answering build, architecture and testing questions.
 
 The chat API routes the question to the right source based on retrieval scores
-(technique → `docs`, general → `general`), so users always get answers anchored
+(technique → `docs`, site → `site`), so users always get answers anchored
 in the relevant content — no manual curation, no duplicated files.
 
 ## 📁 Repository structure
