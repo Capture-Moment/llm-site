@@ -24,19 +24,18 @@ async def stream_answer(
     question: str,
     history: list[ChatMessage] | None = None,
     context: str = "",
+    source: str = "site",
 ) -> AsyncGenerator[str, None]:
     settings = get_settings()
 
-    # Provider selection: config decides the primary, the other one is the fallback.
     primary = gemini if settings.llm_provider == "gemini" else groq
     fallback = groq if primary is gemini else gemini
 
     try:
-        first_token, stream = await _open_stream(primary, question, history, context)
+        first_token, stream = await _open_stream(primary, question, history, context, source)
     except (RateLimitError, InternalServerError) as exc:
-        logger.warning("%s unavailable (%s) — falling back",
-                       primary.__name__, exc)
-        first_token, stream = await _open_stream(fallback, question, history, context)
+        logger.warning("%s unavailable (%s) — falling back", primary.__name__, exc)
+        first_token, stream = await _open_stream(fallback, question, history, context, source)
 
     if first_token is not None:
         yield first_token
@@ -52,9 +51,9 @@ async def _open_stream(provider, question, history, context):
     during the later, unprotected iteration. The first token is buffered
     and re-yielded so nothing is lost.
     """
-    agen = provider.stream_answer(question, history, context)
+    agen = provider.stream_answer(question, history, context, source)
     try:
         first_token = await agen.__anext__()
     except StopAsyncIteration:
-        return None, agen  # empty stream (no error, no content)
+        return None, agen
     return first_token, agen

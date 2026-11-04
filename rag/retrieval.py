@@ -103,14 +103,16 @@ def load_index() -> tuple[Chunk, ...]:
     return tuple(Chunk.model_validate(item) for item in data)
 
 
-async def search(query: str, k: int | None = None) -> list[tuple[float, Chunk]]:
-    """Return the k best chunks WITH their scores (0..1), best first."""
+async def search(query: str, k: int | None = None, kind: str | None = None) -> list[tuple[float, Chunk]]:
+    """Return the k best chunks WITH their scores (0..1), best first.
+    kind: 'general' (site) or 'docs' (documentation) — None = all."""
     settings = get_settings()
     (query_embedding,) = await embed_texts([query])
 
     scored = [
         (cosine_similarity(query_embedding, chunk.embedding), chunk)
         for chunk in load_index()
+        if kind is None or chunk.kind == kind
     ]
     scored.sort(key=lambda pair: pair[0], reverse=True)
     return scored[: (k or settings.top_k)]
